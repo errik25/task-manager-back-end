@@ -44,8 +44,8 @@ router.post('/login', async function (req, res) {
 
 })
 
-router.post('/sign-up', async function (req, res) {
-    const {login, password, name, surname} = req.body;
+router.post('/register', async function (req, res) {
+    const {login, password, name, surname, middleName, manager} = req.body;
     const user = await User.findOne(
         {
             attributes: {exclude: []},
