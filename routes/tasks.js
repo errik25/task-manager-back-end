@@ -64,24 +64,33 @@ router.post("/tasks", auth, async function (req, res) {
 
 router.put("/tasks/:id", auth, async function (req, res) {
   const updatedItem = req.body;
-  await Task.update(
-    {
-      title: updatedItem.title,
-      status: updatedItem.status,
-      priority: updatedItem.priority,
-      description: updatedItem.description,
-      creator: updatedItem.creator,
-      responsible: updatedItem.responsible,
-      completionDate: updatedItem.completionDate,
+  const task = await Task.findOne({
+    attributes: { exclude: [] },
+    where: {
+      id: +req.params.id,
     },
-    {
-      where: {
-        creator: res.locals.user.login,
-        id: +req.params.id,
-      },
-    }
-  );
-  res.sendStatus(200);
+  });
+  if (!task ||
+      !(res.locals.user.login === task.creator ||
+      res.locals.user.login === task.responsible)
+  ) {
+    return res.sendStatus(403);
+
+  } else if (res.locals.user.login === task.creator) {
+    task.title = updatedItem.title;
+    task.status = updatedItem.status;
+    task.priority = updatedItem.priority;
+    task.description = updatedItem.description;
+    task.responsible = updatedItem.responsible;
+    task.completionDate = updatedItem.completionDate;
+    await task.save();
+
+  } else if (res.locals.user.login === task.responsible) {
+    task.status = updatedItem.status;
+    await task.save();
+  }
+
+  res.send(task);
 });
 
 router.delete("/tasks/:id", auth, async function (req, res) {
